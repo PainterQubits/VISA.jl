@@ -1,7 +1,15 @@
-The Instruments.jl package is licensed under the MIT "Expat" License:
-
+Most everything in the visa folder:
 > Copyright (c) 2014: Colm Ryan.
->
+
+Random.jl, Time.jl, and a few other snippets here and there:
+> Copyright (c) 2014: Menyoung Lee.
+
+Everything else:
+> Copyright (c) 2015: Andrew Keller.
+
+All of the code is licensed under the MIT "Expat" License by the respective
+copyright holders:
+
 > Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the
 > "Software"), to deal in the Software without restriction, including

@@ -1,3 +1,5 @@
+# This does not include the Alazar dependencies
+
 using BinDeps
 @BinDeps.setup
 

@@ -5,6 +5,10 @@ See VPP-4.3.2 document for details.
 
 =#
 
+module VISA
+include("..\\..\\deps\\deps.jl")
+
+const defaultBufferSize = 0x00000400
 
 ############################ Types #############################################
 
@@ -34,14 +38,14 @@ for typePair = [("UInt32", UInt32),
 				]
 
 	viTypeName = symbol("Vi"*typePair[1])
-	viConsructorName = symbol("vi"*typePair[1])
 	viPTypeName = symbol("ViP"*typePair[1])
 	viATypeName = symbol("ViA"*typePair[1])
 	@eval begin
 		typealias $viTypeName $typePair[2]
-		$viConsructorName(x) = convert($viTypeName, x)
+		$viTypeName(x) = convert($viTypeName, x)
 		typealias $viPTypeName Ptr{$viTypeName}
 		typealias $viATypeName Array{$viTypeName, 1}
+        export $viTypeName, $viPTypeName, $viATypeName
 	end
 end
 
@@ -59,6 +63,7 @@ for typePair = [("Buf", "PByte"),
 		typealias $viTypeName $mappedViType
 		typealias $viPTypeName $mappedViType
 		typealias $viATypeName Array{$viTypeName, 1}
+        export $viTypeName, $viPTypeName, $viATypeName
 	end
 end
 
@@ -74,6 +79,9 @@ typealias ViAttr ViUInt32
 typealias ViEventType ViUInt32
 typealias ViEventFilter ViUInt32
 
+export ViEvent, ViPEvent #soexclusive #VIP
+export ViFindList, ViPFindList, ViString, ViRsrc, ViBuf, ViAccessMode
+export ViAttr, ViEventType, ViEventFilter
 
 ########################## Constants ###########################################
 
@@ -83,8 +91,11 @@ include("codes.jl")
 #Atributes and other definitions
 include("constants.jl")
 
-
 ######################### Functions ############################################
+
+export viOpenDefaultRM, viFindRsrc, viOpen, viClose, viSetAttribute
+export viEnableEvent, viDisableEvent, viDiscardEvents, viWaitOnEvent, viWrite
+export viRead!, viRead, readavailable, binblockreadavailable, binblockwrite
 
 #Helper macro to make VISA call and check the status for an error
 macro check_status(viCall)
@@ -97,8 +108,6 @@ macro check_status(viCall)
 		status
 	end
 end
-
-
 
 #- Resource Manager Functions and Operations -------------------------------#
 function viOpenDefaultRM()
@@ -222,7 +231,7 @@ end
 
 
 
-#- Basic I/O Operations ----------------------------------------------------#
+#- Basic I/O Operations -------------------------------------------------------#
 
 function viWrite(instrHandle::ViSession, data::Union{ASCIIString, Vector{UInt8}})
 	bytesWritten = ViUInt32[0]
@@ -232,7 +241,7 @@ function viWrite(instrHandle::ViSession, data::Union{ASCIIString, Vector{UInt8}}
 	bytesWritten[1]
 end
 
-function viRead!(instrHandle::ViSession, buffer::Array{UInt8})
+function viRead!(instrHandle::ViSession, buffer::Vector{UInt8})
 	bytesRead = ViUInt32[0]
 	status = @check_status ccall((:viRead, libvisa), ViStatus,
 						(ViSession, ViBuf, ViUInt32, ViPUInt32),
@@ -240,25 +249,11 @@ function viRead!(instrHandle::ViSession, buffer::Array{UInt8})
 	return (status != VI_SUCCESS_MAX_CNT, bytesRead[])
 end
 
-function viRead(instrHandle::ViSession; bufSize::UInt32=0x00000400)
+function viRead(instrHandle::ViSession; bufSize::UInt32=defaultBufferSize)
 	buf = Array(UInt8, bufSize)
 	(done, bytesRead) = viRead!(instrHandle, buf)
 	buf[1:bytesRead]
 end
-
-function readavailable(instrHandle::ViSession)
-	ret = IOBuffer()
-	buf = Array(UInt8, 0x400)
-	while true
-		(done, bytesRead) = viRead!(instrHandle, buf)
-		write(ret,buf[1:bytesRead])
-		if done
-			break
-		end
-	end
-	takebuf_array(ret)
-end
-
 
 # ViStatus _VI_FUNC  viReadAsync     (ViSession vi, ViPBuf buf, ViUInt32 cnt, ViPJobId  jobId);
 # ViStatus _VI_FUNC  viReadToFile    (ViSession vi, ViConstString filename, ViUInt32 cnt,
@@ -269,3 +264,55 @@ end
 # ViStatus _VI_FUNC  viAssertTrigger (ViSession vi, ViUInt16 protocol);
 # ViStatus _VI_FUNC  viReadSTB       (ViSession vi, ViPUInt16 status);
 # ViStatus _VI_FUNC  viClear         (ViSession vi);
+
+#- Outside the specification --------------------------------------------------#
+
+function readavailable(instrHandle::ViSession)
+	ret = IOBuffer()
+	buf = Array(UInt8, defaultBufferSize)
+	while true
+		(done, bytesRead) = viRead!(instrHandle, buf)
+		write(ret,buf[1:bytesRead])
+		if done
+			break
+		end
+	end
+	takebuf_array(ret)
+end
+
+function binblockwrite(instrHandle::ViSession, data::Vector{UInt8})
+    len = length(data)
+    dig = ndigits(len,10)
+    @assert dig <= 9 "Data too long."
+    message = [UInt8(x) for x in ASCIIString("#",dig,len)]
+    push!(message,data)
+    viWrite(instrHandle,message)
+end
+
+function binblockreadavailable(instrHandle::ViSession)
+    ret = IOBuffer()
+	buf = Array(UInt8, defaultBufferSize)
+
+	while true
+		(done, bytesRead) = viRead!(instrHandle, buf)
+		write(ret,buf[1:bytesRead])
+		if done
+			break
+		end
+	end
+    seekstart(ret)
+
+    if (read(ret,Char) != '#')
+        error("Malformed block header")
+    end
+
+    dig = parse(ASCIIString(read(ret,UInt8,1)))
+    skip(ret,dig)
+    # if (dig != 0)
+    #     # parse(ASCIIString(read(ret,UInt8,dig)))
+    # end
+
+    ret # You can get the number of bytes to parse without using the header: ret.size-ret.ptr
+end
+
+end

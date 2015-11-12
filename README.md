@@ -1,20 +1,13 @@
-# Instruments
+# Painter Group qubits
 
-Instrument control with Julia.  
+Painter Group implementation of Instrument control with Julia. Work in progress, not ready for implementation.
 
 ## Documentation
 
-Available [online](http://instrumentsjl.readthedocs.org/).
+Julia code for VISA forked from the Instruments.jl package [online](http://instrumentsjl.readthedocs.org/).
+
+Other documentation forthcoming.
 
 ## Quick Start
 
-```
-using Instruments
-
-instruments = find_resources() # returns a list of VISA strings for all found instruments
-uwSource = Instrument()
-connect!(uwSource, "GPIB0::28::INSTR")
-query(uwSource, "*IDN?") # prints "Rohde&Schwarz,SMIQ...."
-disconnect!(uwSource)
-```
-
+Forthcoming.
