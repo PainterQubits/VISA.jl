@@ -6,7 +6,7 @@ See VPP-4.3.2 document for details.
 =#
 
 module VISA
-include("..\\..\\deps\\deps.jl")
+@windows? include("..\\..\\deps\\deps.jl") : include("../../deps/deps.jl")
 
 const defaultBufferSize = 0x00000400
 
@@ -95,7 +95,7 @@ include("constants.jl")
 
 export viOpenDefaultRM, viFindRsrc, viOpen, viClose, viSetAttribute
 export viEnableEvent, viDisableEvent, viDiscardEvents, viWaitOnEvent, viWrite
-export viRead!, viRead, readavailable, binblockreadavailable, binblockwrite
+export viRead!, viRead, readAvailable, binBlockReadAvailable, binBlockWrite
 
 #Helper macro to make VISA call and check the status for an error
 macro check_status(viCall)
@@ -233,11 +233,11 @@ end
 
 #- Basic I/O Operations -------------------------------------------------------#
 
-function viWrite(instrHandle::ViSession, data::Union{ASCIIString, Vector{UInt8}})
+function viWrite(instrHandle::ViSession, message::Union{ASCIIString, Vector{UInt8}})
 	bytesWritten = ViUInt32[0]
 	@check_status ccall((:viWrite, libvisa), ViStatus,
 						(ViSession, ViBuf, ViUInt32, ViPUInt32),
-						instrHandle, data, length(data), bytesWritten)
+						instrHandle, message, length(message), bytesWritten)
 	bytesWritten[1]
 end
 
@@ -267,7 +267,7 @@ end
 
 #- Outside the specification --------------------------------------------------#
 
-function readavailable(instrHandle::ViSession)
+function readAvailable(instrHandle::ViSession)
 	ret = IOBuffer()
 	buf = Array(UInt8, defaultBufferSize)
 	while true
@@ -280,39 +280,61 @@ function readavailable(instrHandle::ViSession)
 	takebuf_array(ret)
 end
 
-function binblockwrite(instrHandle::ViSession, data::Vector{UInt8})
+function binBlockWrite(instrHandle::ViSession, message::Union{ASCIIString, Vector{UInt8}}, data::Vector{UInt8})
     len = length(data)
     dig = ndigits(len,10)
     @assert dig <= 9 "Data too long."
-    message = [UInt8(x) for x in ASCIIString("#",dig,len)]
-    push!(message,data)
-    viWrite(instrHandle,message)
+    header = [UInt8(x) for x in string("#",dig,len)]
+    viWrite(instrHandle,[convert(Array{UInt8,1},message);header;data]::Array{UInt8,1})
 end
 
-function binblockreadavailable(instrHandle::ViSession)
+function binBlockReadAvailable(instrHandle::ViSession)
     ret = IOBuffer()
 	buf = Array(UInt8, defaultBufferSize)
 
-	while true
-		(done, bytesRead) = viRead!(instrHandle, buf)
-		write(ret,buf[1:bytesRead])
-		if done
-			break
-		end
-	end
-    seekstart(ret)
+    (done, bytesRead) = viRead!(instrHandle, buf)
+    write(ret, buf[1:bytesRead])
 
-    if (read(ret,Char) != '#')
-        error("Malformed block header")
+    dataLength = parseIEEEBlockHeader(ret)
+
+    totalLengthToRead = ret.ptr + dataLength
+    offset = ret.ptr
+    seekend(ret)
+
+	while (bytesRead < totalLengthToRead)
+		(done, bytes) = viRead!(instrHandle, buf)
+        write(ret,buf[1:bytes])
+        bytesRead += bytes
+	end
+
+    if (!done)
+        error("Read the expected number of bytes, but not done reading.")
     end
 
-    dig = parse(ASCIIString(read(ret,UInt8,1)))
-    skip(ret,dig)
-    # if (dig != 0)
-    #     # parse(ASCIIString(read(ret,UInt8,dig)))
-    # end
-
+    seek(ret,offset-1)
     ret # You can get the number of bytes to parse without using the header: ret.size-ret.ptr
+end
+
+"""
+Takes an IOBuffer, seeks the start, and reads through the header, returning the
+data length (excluding header). The buffer pointer is left at the start of The
+data (excluding header). Does not support the `#0...` header.
+"""
+function parseIEEEBlockHeader(io::IOBuffer)
+    seekstart(io)
+
+    if (read(io,Char) != '#')
+        error("Not an IEEE block header")
+    end
+
+    dig = parse(ASCIIString(read(io,UInt8,1)))
+    if (dig != 0)
+        dataLength = parse(ASCIIString(read(io,UInt8,dig)))
+    else
+        error("Unknown bytes expected.")
+    end
+
+    return dataLength
 end
 
 end

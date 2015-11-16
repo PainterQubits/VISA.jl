@@ -10,7 +10,6 @@ const offsetPlusPPOver2 = 0x3ffe
 const maximumValue      = 0x3fff
 
 type AWG5014C <: InstrumentVISA
-	#vi::PyObject 	# this is the GpibInstrument object!
     vi::(VISA.ViSession)
     # wavelistArray::Array{ASCIIString,1}
 
@@ -272,7 +271,7 @@ function clearWaveforms(ins::AWG5014C)
     write(ins,"SOUR4:FUNC:USER \"\"")
 end
 
-function deleteUserWaveform(ins::AWG5014C, name::ASCIIString)
+function deleteWaveform(ins::AWG5014C, name::ASCIIString)
     write(ins, "WLIS:WAV:DEL "*quoted(name))
 end
 
@@ -307,7 +306,7 @@ function waveformLength(ins::AWG5014C, name::ASCIIString)
 end
 
 function waveformIsPredefined(ins::AWG5014C, name::ASCIIString)
-    Bool(ins, query(ins,"WLIST:WAV:PRED? "*quoted(name)))
+    Bool(parse(query(ins,"WLIST:WAV:PRED? "*quoted(name))))
 end
 
 function waveformTimestamp(ins::AWG5014C, name::ASCIIString)
@@ -318,16 +317,19 @@ function waveformType(ins::AWG5014C, name::ASCIIString)
     AWG5014CWaveformType(ins, query(ins,"WLIS:WAV:TYPE? "*quoted(name)))
 end
 
-function pushToAWG(ins::AWG5014C, name::ASCIIString, array::Array{AWG5014CDatum,1},::Type{RealWaveform})
+function pushToAWG(ins::AWG5014C, name::ASCIIString, awgData::AWG5014CData)
 
-    l = length(array)
-    @assert ndigits(l*5,10) <= 9 "Data too long for the implemented transfer protocol."
-    pushArray = Array{Any,1}()
-    for (x in array)
-        push!(pushArray, UInt8(x.marker1) << 6 | UInt8(x.marker2) << 7)
-        push!(pushArray, htol(Float32(x.amplitude)))
+    if (waveformIsPredefined(ins,name))
+        error("Cannot overwrite predefined waveform")
     end
-    ins.vi[:write_binary_values]("WLIST:WAV:DATA "*quoted(name)*",", pushArray, datatype=("Bf"^l), is_big_endian=false)
+
+    # only real waveform implemented currently
+    buf = IOBuffer()
+    for (i in 1:length(awgData.data))
+        Base.write(buf, htol(awgData.data[i]))
+        Base.write(buf, UInt8(awgData.marker1[i]) << 6 | UInt8(awgData.marker2[i]) << 7)
+    end
+    binBlockWrite(ins.vi, "WLIST:WAV:DATA "*quoted(name)*",",takebuf_array(buf))
 
 end
 
@@ -335,7 +337,8 @@ function pullFromAWG(ins::AWG5014C, name::ASCIIString)
     len = waveformLength(ins, name)
     typ = waveformType(ins, name)
     write(ins,"WLIST:WAV:DATA? "*quoted(name))
-    io = binblockreadavailable(ins.vi)
+    io = binBlockReadAvailable(ins.vi)
+
     samples = Int64((io.size-io.ptr)/5)    # assuming real waveform
 
     amp =  Vector{Float32}(samples)

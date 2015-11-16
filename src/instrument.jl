@@ -451,7 +451,7 @@ function query(ins::InstrumentVISA, msg::ASCIIString, delay::Real=0)
 end
 read(ins::InstrumentVISA) = rstrip(bytestring(viRead(ins.vi)), ['\r', '\n'])
 write(ins::InstrumentVISA, msg::ASCIIString) = viWrite(ins.vi, msg)
-readavailable(ins::InstrumentVISA) = VISA.readavailable(ins.vi)
+readAvailable(ins::InstrumentVISA) = VISA.readAvailable(ins.vi)
 
 find_resources(expr::AbstractString="?*::INSTR") = viFindRsrc(resourceManager, expr)
 
