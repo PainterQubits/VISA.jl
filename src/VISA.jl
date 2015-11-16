@@ -178,6 +178,13 @@ function viGetAttribute(viObj::ViObject, attrName::ViAttr)
 	value[]
 end
 
+function viGetAttributeString(viObj::ViObject, attrName::ViAttr)
+    io = IOBuffer()
+    write(viGetAttribute(viObj,attrName))
+    seekstart(io)
+    rstrip(readall(io),'\0')
+end
+
 # ViStatus _VI_FUNC  viStatusDesc    (ViObject vi, ViStatus status, ViChar _VI_FAR desc[]);
 # ViStatus _VI_FUNC  viTerminate     (ViObject vi, ViUInt16 degree, ViJobId jobId);
 
