@@ -180,7 +180,7 @@ end
 
 function viGetAttributeString(viObj::ViObject, attrName::ViAttr)
     io = IOBuffer()
-    write(viGetAttribute(viObj,attrName))
+    write(io, viGetAttribute(viObj,attrName))
     seekstart(io)
     rstrip(readall(io),'\0')
 end
