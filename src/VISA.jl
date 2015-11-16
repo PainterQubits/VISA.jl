@@ -93,9 +93,10 @@ include("constants.jl")
 
 ######################### Functions ############################################
 
-export viOpenDefaultRM, viFindRsrc, viOpen, viClose, viSetAttribute
-export viEnableEvent, viDisableEvent, viDiscardEvents, viWaitOnEvent, viWrite
-export viRead!, viRead, viClear
+export viOpenDefaultRM, viFindRsrc, viOpen, viClose
+export viSetAttribute, viGetAttribute, viGetAttributeString
+export viEnableEvent, viDisableEvent, viDiscardEvents, viWaitOnEvent
+export viWrite, viRead!, viRead, viClear
 export readAvailable, binBlockReadAvailable, binBlockWrite
 
 #Helper macro to make VISA call and check the status for an error
