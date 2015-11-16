@@ -95,7 +95,8 @@ include("constants.jl")
 
 export viOpenDefaultRM, viFindRsrc, viOpen, viClose, viSetAttribute
 export viEnableEvent, viDisableEvent, viDiscardEvents, viWaitOnEvent, viWrite
-export viRead!, viRead, readAvailable, binBlockReadAvailable, binBlockWrite
+export viRead!, viRead, viClear
+export readAvailable, binBlockReadAvailable, binBlockWrite
 
 #Helper macro to make VISA call and check the status for an error
 macro check_status(viCall)
@@ -271,6 +272,10 @@ end
 # ViStatus _VI_FUNC  viAssertTrigger (ViSession vi, ViUInt16 protocol);
 # ViStatus _VI_FUNC  viReadSTB       (ViSession vi, ViPUInt16 status);
 # ViStatus _VI_FUNC  viClear         (ViSession vi);
+
+function viClear(instrHandle::ViSession)
+	@check_status ccall((:viClear, libvisa), ViStatus, (ViSession,), instrHandle)
+end
 
 #- Outside the specification --------------------------------------------------#
 
