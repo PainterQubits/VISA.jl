@@ -6,7 +6,7 @@ See VPP-4.3.2 document for details.
 =#
 
 module VISA
-@windows? include("..\\..\\deps\\deps.jl") : include("../../deps/deps.jl")
+@windows? include("..\\deps\\deps.jl") : include("../deps/deps.jl")
 
 const defaultBufferSize = 0x00000400
 
