@@ -148,7 +148,7 @@ end
 #                                     ViChar _VI_FAR aliasIfExists[]);
 
 
-function viOpen(sesn::ViSession, name::ASCIIString; mode::ViAccessMode=VI_NO_LOCK, timeout::ViUInt32=VI_TMO_IMMEDIATE)
+function viOpen(sesn::ViSession, name::AbstractString; mode::ViAccessMode=VI_NO_LOCK, timeout::ViUInt32=VI_TMO_IMMEDIATE)
     #Pointer for the instrument handle
     instrHandle = ViSession[0]
     @check_status ccall((:viOpen, libvisa), ViStatus,
@@ -242,7 +242,7 @@ end
 
 #- Basic I/O Operations -------------------------------------------------------#
 
-function viWrite(instrHandle::ViSession, message::ASCIIString, terminator::ASCIIString="")
+function viWrite(instrHandle::ViSession, message::AbstractString, terminator::AbstractString="")
     bytesWritten = ViUInt32[0]
     mess = message*terminator
     @check_status ccall((:viWrite, libvisa), ViStatus,
@@ -251,7 +251,7 @@ function viWrite(instrHandle::ViSession, message::ASCIIString, terminator::ASCII
     bytesWritten[1]
 end
 
-function viWrite(instrHandle::ViSession, message::Vector{UInt8}, terminator::ASCIIString="")
+function viWrite(instrHandle::ViSession, message::Vector{UInt8}, terminator::AbstractString="")
     bytesWritten = ViUInt32[0]
     io = IOBuffer()
     Base.write(io, terminator)
@@ -307,7 +307,7 @@ function readAvailable(instrHandle::ViSession)
 end
 
 # At the moment, terminators are not included in the digit count...
-function binBlockWrite(instrHandle::ViSession, message::Union{ASCIIString, Vector{UInt8}}, data::Vector{UInt8}, terminator::ASCIIString="")
+function binBlockWrite(instrHandle::ViSession, message::Union{AbstractString, Vector{UInt8}}, data::Vector{UInt8}, terminator::AbstractString="")
     len = length(data)
     dig = ndigits(len,10)
     @assert dig <= 9 "Data too long."
