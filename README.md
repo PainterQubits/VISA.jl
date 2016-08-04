@@ -9,6 +9,6 @@ Pulled out of [BBN-Q/Instruments.jl](https://github.com/BBN-Q/Instruments.jl) in
 [Download and install the NI-VISA libraries.](https://www.ni.com/visa/)
 
 ```jl
-Pkg.clone("https://github.com/ajkeller34/VISA.jl.git")
+Pkg.clone("https://github.com/PainterQubits/VISA.jl.git")
 Pkg.build("VISA")
 ```

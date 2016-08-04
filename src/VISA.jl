@@ -4,7 +4,7 @@ Thin-veener over the VISA shared library.
 See VPP-4.3.2 document for details.
 
 =#
-
+__precompile__(true)
 module VISA
 @windows? include("..\\deps\\deps.jl") : include("../deps/deps.jl")
 
