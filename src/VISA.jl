@@ -6,7 +6,8 @@ See VPP-4.3.2 document for details.
 =#
 __precompile__(true)
 module VISA
-@windows? include("..\\deps\\deps.jl") : include("../deps/deps.jl")
+using Compat
+include(joinpath(Pkg.dir("VISA"),"deps","deps.jl"))
 
 const defaultBufferSize = 0x00000400
 
@@ -37,12 +38,11 @@ for typePair = [("UInt32", UInt32),
                 ("Session", UInt32)
                 ]
 
-    viTypeName = symbol("Vi"*typePair[1])
-    viPTypeName = symbol("ViP"*typePair[1])
-    viATypeName = symbol("ViA"*typePair[1])
+    viTypeName = Symbol("Vi"*typePair[1])
+    viPTypeName = Symbol("ViP"*typePair[1])
+    viATypeName = Symbol("ViA"*typePair[1])
     @eval begin
         typealias $viTypeName $typePair[2]
-        $viTypeName(x) = convert($viTypeName, x)
         typealias $viPTypeName Ptr{$viTypeName}
         typealias $viATypeName Array{$viTypeName, 1}
         export $viTypeName, $viPTypeName, $viATypeName
@@ -53,11 +53,11 @@ for typePair = [("Buf", "PByte"),
                 ("String", "PChar"),
                 ("Rsrc", "String")
                 ]
-    viTypeName = symbol("Vi"*typePair[1])
-    viPTypeName = symbol("ViP"*typePair[1])
-    viATypeName = symbol("ViA"*typePair[1])
+    viTypeName = Symbol("Vi"*typePair[1])
+    viPTypeName = Symbol("ViP"*typePair[1])
+    viATypeName = Symbol("ViA"*typePair[1])
 
-    mappedViType = symbol("Vi"*typePair[2])
+    mappedViType = Symbol("Vi"*typePair[2])
 
     @eval begin
         typealias $viTypeName $mappedViType
@@ -354,9 +354,9 @@ function parseIEEEBlockHeader(io::IOBuffer)
         error("Not an IEEE block header")
     end
 
-    dig = parse(ASCIIString(read(io,UInt8,1)))
+    dig = parse(Compat.String(copy(read(io,UInt8,1))))
     if (dig != 0)
-        dataLength = parse(ASCIIString(read(io,UInt8,dig)))
+        dataLength = parse(Compat.String(copy(read(io,UInt8,dig))))
     else
         error("Unknown bytes expected.")
     end

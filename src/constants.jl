@@ -180,13 +180,13 @@ const VI_ATTR_PXI_RECV_INTR_DATA          =  0x3FFF4241
 
 #- Attributes (platform dependent size) ------------------------------------*/
 
-if WORD_SIZE == 64
+if Sys.WORD_SIZE == 64
   typealias ViAttrState ViUInt64
 else
   typealias ViAttrState ViUInt32
 end
 
-if WORD_SIZE == 64
+if Sys.WORD_SIZE == 64
   const VI_ATTR_USER_DATA_64                =  0x3FFF000A
   const VI_ATTR_RET_COUNT_64                =  0x3FFF4028
   const VI_ATTR_USER_DATA                   = VI_ATTR_USER_DATA_64
@@ -196,14 +196,14 @@ else
   const VI_ATTR_RET_COUNT                   = VI_ATTR_RET_COUNT_32
 end
 
-if WORD_SIZE == 64
+if Sys.WORD_SIZE == 64
   const VI_ATTR_WIN_BASE_ADDR_64            =  0x3FFF009B
   const VI_ATTR_WIN_SIZE_64                 =  0x3FFF009C
   const VI_ATTR_MEM_BASE_64                 =  0x3FFF00D0
   const VI_ATTR_MEM_SIZE_64                 =  0x3FFF00D1
 end
 
-if WORD_SIZE == 64
+if Sys.WORD_SIZE == 64
   const VI_ATTR_WIN_BASE_ADDR         = VI_ATTR_WIN_BASE_ADDR_64
   const VI_ATTR_WIN_SIZE              = VI_ATTR_WIN_SIZE_64
   const VI_ATTR_MEM_BASE              = VI_ATTR_MEM_BASE_64
