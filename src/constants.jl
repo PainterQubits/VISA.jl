@@ -181,9 +181,9 @@ const VI_ATTR_PXI_RECV_INTR_DATA          =  0x3FFF4241
 #- Attributes (platform dependent size) ------------------------------------*/
 
 if Sys.WORD_SIZE == 64
-  typealias ViAttrState ViUInt64
+  const ViAttrState = ViUInt64
 else
-  typealias ViAttrState ViUInt32
+  const ViAttrState = ViUInt32
 end
 
 if Sys.WORD_SIZE == 64

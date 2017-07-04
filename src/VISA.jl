@@ -42,9 +42,9 @@ for typePair = [("UInt32", UInt32),
     viPTypeName = Symbol("ViP"*typePair[1])
     viATypeName = Symbol("ViA"*typePair[1])
     @eval begin
-        typealias $viTypeName $typePair[2]
-        typealias $viPTypeName Ptr{$viTypeName}
-        typealias $viATypeName Array{$viTypeName, 1}
+        const $viTypeName = $typePair[2]
+        const $viPTypeName = Ptr{$viTypeName}
+        const $viATypeName = Vector{$viTypeName}
         export $viTypeName, $viPTypeName, $viATypeName
     end
 end
@@ -60,24 +60,24 @@ for typePair = [("Buf", "PByte"),
     mappedViType = Symbol("Vi"*typePair[2])
 
     @eval begin
-        typealias $viTypeName $mappedViType
-        typealias $viPTypeName $mappedViType
-        typealias $viATypeName Array{$viTypeName, 1}
+        const $viTypeName = $mappedViType
+        const $viPTypeName = $mappedViType
+        const $viATypeName = Vector{$viTypeName}
         export $viTypeName, $viPTypeName, $viATypeName
     end
 end
 
-typealias ViEvent ViObject
-typealias ViPEvent Ptr{ViEvent}
-typealias ViFindList ViObject
-typealias ViPFindList Ptr{ViFindList}
-typealias ViString ViPChar
-typealias ViRsrc ViString
-typealias ViBuf ViPByte;
-typealias ViAccessMode ViUInt32
-typealias ViAttr ViUInt32
-typealias ViEventType ViUInt32
-typealias ViEventFilter ViUInt32
+const ViEvent = ViObject
+const ViPEvent = Ptr{ViEvent}
+const ViFindList = ViObject
+const ViPFindList = Ptr{ViFindList}
+const ViString = ViPChar
+const ViRsrc = ViString
+const ViBuf = ViPByte;
+const ViAccessMode = ViUInt32
+const ViAttr = ViUInt32
+const ViEventType = ViUInt32
+const ViEventFilter = ViUInt32
 
 export ViEvent, ViPEvent #soexclusive #VIP
 export ViFindList, ViPFindList, ViString, ViRsrc, ViBuf, ViAccessMode
