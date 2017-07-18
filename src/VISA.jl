@@ -121,7 +121,7 @@ end
 function viFindRsrc(sesn::ViSession, expr::AbstractString)
     returnCount = ViUInt32[0]
     findList = ViFindList[0]
-    desc = Array(ViChar, VI_FIND_BUFLEN)
+    desc = Array{ViChar}(VI_FIND_BUFLEN)
     @check_status ccall((:viFindRsrc, libvisa), ViStatus,
                         (ViSession, ViString, ViPFindList, ViPUInt32, ViPChar),
                         sesn, expr, findList, returnCount, desc)
@@ -216,8 +216,8 @@ function viDiscardEvents(instrHandle::ViSession, eventType::ViEventType,
 end
 
 function viWaitOnEvent(instrHandle::ViSession, eventType::ViEventType, timeout::UInt32 = VI_TMO_INFINITE)
-    outType = Array(ViEventType)
-    outEvent = Array(ViEvent)
+    outType = Array{ViEventType}()
+    outEvent = Array{ViEvent}()
     @check_status ccall((:viWaitOnEvent,libvisa), ViStatus,
                         (ViSession, ViEventType, UInt32, Ptr{ViEventType}, Ptr{ViEvent}),
                          instrHandle, eventType, timeout, outType, outEvent)
@@ -256,7 +256,7 @@ function viWrite(instrHandle::ViSession, message::Vector{UInt8}, terminator::Abs
     io = IOBuffer()
     Base.write(io, terminator)
     seekstart(io)
-    mess = [message; takebuf_array(io)]
+    mess = [message; @compat take!(io)]
     @check_status ccall((:viWrite, libvisa), ViStatus,
                         (ViSession, ViBuf, ViUInt32, ViPUInt32),
                         instrHandle, mess, length(mess), bytesWritten)
@@ -272,7 +272,7 @@ function viRead!(instrHandle::ViSession, buffer::Vector{UInt8})
 end
 
 function viRead(instrHandle::ViSession; bufSize::UInt32=defaultBufferSize)
-    buf = Array(UInt8, bufSize)
+    buf = Array{UInt8}(bufSize)
     (done, bytesRead) = viRead!(instrHandle, buf)
     buf[1:bytesRead]
 end
@@ -295,7 +295,7 @@ end
 
 function readAvailable(instrHandle::ViSession)
     ret = IOBuffer()
-    buf = Array(UInt8, defaultBufferSize)
+    buf = Array{UInt8}(defaultBufferSize)
     while true
         (done, bytesRead) = viRead!(instrHandle, buf)
         write(ret,buf[1:bytesRead])
@@ -303,7 +303,7 @@ function readAvailable(instrHandle::ViSession)
             break
         end
     end
-    takebuf_array(ret)
+    @compat take!(ret)
 end
 
 # At the moment, terminators are not included in the digit count...
@@ -317,7 +317,7 @@ end
 
 function binBlockReadAvailable(instrHandle::ViSession)
     ret = IOBuffer()
-    buf = Array(UInt8, defaultBufferSize)
+    buf = Array{UInt8}(defaultBufferSize)
 
     (done, bytesRead) = viRead!(instrHandle, buf)
     write(ret, buf[1:bytesRead])
