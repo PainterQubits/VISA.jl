@@ -7,7 +7,18 @@ See VPP-4.3.2 document for details.
 __precompile__(true)
 module VISA
 using Compat
-include(joinpath(Pkg.dir("VISA"),"deps","deps.jl"))
+
+# This package can prevent other packages from being tested on Travis CI because it
+# expects a VISA library to be present and errors out when one is absent. The env variable
+# VISA_JL_NO_LOAD may be set (to anything) to bypass the library dependency if you're okay
+# with virtually everything in this package not working.
+#
+# Since the following lines are not in __init__(), they only get run during precompilation.
+# The package must be recompiled to change this setting.
+#
+# tl;dr don't worry about it, things should work as before unless you set this env variable
+!haskey(ENV, "VISA_JL_NO_LOAD") &&
+    include(joinpath(Pkg.dir("VISA"),"deps","deps.jl"))
 
 const defaultBufferSize = 0x00000400
 
